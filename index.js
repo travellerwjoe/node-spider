@@ -28,16 +28,41 @@ request
         }
 
         var ep = new eventproxy();
-        
+
 
 
         var $ = cheerio.load(res.text);
-        var tr = $('tr.matchTr');
+        var tr = $('tr.matchTr').filter((item, index) => {
+            const status = $(item).find('.matchStatus').text();
+            if (status == "完") {
+                return false
+            }
+            return true
+        });
+        console.log(tr.length)
         var matches = [];
 
         ep.tail('match', (match) => {
-            
+            matches.push(match);
         })
+
+
+        let queue = async.queue((task, callback) => {
+            request
+                .post(`http://live.zgzcw.com/ls/EventData.action?id=${task.matchId}`)
+                .end((err, res) => {
+                    res = res.text && JSON.parse(res.text) || []
+                    // match.event = ;
+                    // console.log(match)
+                    callback(null, res)
+                })
+
+        }, 5)
+        queue.drain = () => { console.log('all over') };
+
+        
+        // queue.saturated = () => { console.log('a group over') }
+        // queue.empty=()=>{console.log('empty')}
 
         tr.each((index, item) => {
             var match, status = $(item).find('.matchStatus').text();
@@ -60,20 +85,38 @@ request
                 }
             }
 
-            request
-                .post(`http://live.zgzcw.com/ls/EventData.action?id=${match.id}`)
-                .end((err, res) => {
-                    match.event = res.text && JSON.parse(res.text) || [];
-                    // console.log(match)
-                    console.log(index,',',match.id)
-                    ep.emit('match', match);
-                })
+
+            queue.push({ matchId: match.id }, (err, res) => {
+                match.event = res;
+                ep.emit('match', match);
+            })
+
+
+
+            /*async.parallelLimit([
+                (callback) => {
+                    request
+                        .post(`http://live.zgzcw.com/ls/EventData.action?id=${match.id}`)
+                        .end((err, res) => {
+                            match.event = res.text && JSON.parse(res.text) || [];
+                            // console.log(match)
+                            callback(null,)
+                        })
+                }
+            ], 10, (err, res) => {
+                console.log();
+                console.log("-----------------------")
+                console.log(res);
+                // console.log(index, ',', match.id)
+                ep.emit('match', match);
+            })*/
+
 
 
         })
         // console.log(ep, tr.length)
 
-        
+
         // ep.emit('list', matches);
     })
 
@@ -108,7 +151,7 @@ function openDatabase(host = 'localhost', port = '27017', dbname) {
             return;
         }
         console.log('Connect success');
-        
+
         insertDocuments(db, 'play', [{ t: 123 }], (res) => {
             console.log(res);
 
