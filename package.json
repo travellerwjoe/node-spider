@@ -1,0 +1,19 @@
+{
+  "name": "node-spider",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
+  "description": "",
+  "dependencies": {
+    "async": "^2.1.4",
+    "cheerio": "^0.22.0",
+    "eventproxy": "^0.3.5",
+    "mongodb": "^2.2.22",
+    "superagent": "^3.4.1"
+  }
+}
