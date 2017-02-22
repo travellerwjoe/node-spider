@@ -1,124 +1,126 @@
 var cheerio = require('cheerio');
 var request = require('superagent');
 var eventproxy = require('eventproxy');
+var moment = require('moment');
 var async = require('async');
 var mongo = require('mongodb').MongoClient;
 var url = require('url');
 var path = require('path');
+var fs = require('fs');
 
-
-
+/*console.log(moment('2017-02-20').format('YYYYMMDD'))
+console.log(moment('2017-02-20').subtract(1, 'd'));
+return;*/
 const zgzcwUrl = 'http://live.zgzcw.com/ls/AllData.action';
-
 const zgzcwData = {
     code: 'all',
+    // code: '201',
     ajax: true,
-    date: '2017-01-30',
+    date: '2017-02-22',
 }
 
-request
-    .post(zgzcwUrl)
-    .type('form')
-    .send(zgzcwData)
-    // .set('Content-Type', 'application/json')
-    .end((err, res) => {
-        if (err) {
-            console.log(`请求日期为${zgzcwData.date}的比赛数据出错`);
-            return;
-        }
+getMatches('20170222')
 
-        var ep = new eventproxy();
-
-
-
-        var $ = cheerio.load(res.text);
-        var tr = $('tr.matchTr').filter((item, index) => {
-            const status = $(item).find('.matchStatus').text();
-            if (status == "完") {
-                return false
-            }
-            return true
-        });
-        console.log(tr.length)
-        var matches = [];
-
-        ep.tail('match', (match) => {
-            matches.push(match);
-        })
-
-
-        let queue = async.queue((task, callback) => {
-            request
-                .post(`http://live.zgzcw.com/ls/EventData.action?id=${task.matchId}`)
-                .end((err, res) => {
-                    res = res.text && JSON.parse(res.text) || []
-                    // match.event = ;
-                    // console.log(match)
-                    callback(null, res)
-                })
-
-        }, 5)
-        queue.drain = () => { console.log('all over') };
-
-        
-        // queue.saturated = () => { console.log('a group over') }
-        // queue.empty=()=>{console.log('empty')}
-
-        tr.each((index, item) => {
-            var match, status = $(item).find('.matchStatus').text();
-            if (status != '完') {
+function getMatches(date) {
+    if (date < '20170201') return;
+    
+    request
+        .post(zgzcwUrl)
+        .type('form')
+        .send(zgzcwData)
+        // .set('Content-Type', 'application/json')
+        .end((err, res) => {
+            if (err) {
+                console.log(`请求日期为${zgzcwData.date}的比赛数据出错`);
                 return;
             }
+            console.log('-------------------------------------')
+            console.log(`正在请求日期为${zgzcwData.date}的比赛数据`);
+            console.log('-------------------------------------')
 
-            match = {
-                id: $(item).attr('matchid'),
-                type: $(item).find('.matchType').text(),
-                round: $(item).find('td[name=ROUND_AND_GROUPING]').text(),
-                date: $(item).find('.matchDate').text(),
-                home: $(item).find('.sptl>a').text(),
-                guest: $(item).find('.sptr>a').text(),
-                score: $(item).find('td.boldbf').text(),
-                score_half: $(item).find('.bcbf').text(),
-                odds: {
-                    european: $(item).find('.oupei span').map((index, item) => { return $(item).text() }).toArray(),
-                    asian: $(item).find('.yapan span').map((index, item) => { return $(item).text() }).toArray(),
-                }
-            }
+            var ep = new eventproxy();
 
+            var $ = cheerio.load(res.text);
+            var tr = $('tr.matchTr').filter((index, item) => {
+                const status = $(item).find('.matchStatus').text().trim();
+                return status === "完"
+            });
 
-            queue.push({ matchId: match.id }, (err, res) => {
-                match.event = res;
-                ep.emit('match', match);
-            })
+            let matches = [];
+            let finishedNum = 0;//已请求完成数
+            let allNum = tr.length;//所有请求数
 
-
-
-            /*async.parallelLimit([
-                (callback) => {
-                    request
-                        .post(`http://live.zgzcw.com/ls/EventData.action?id=${match.id}`)
-                        .end((err, res) => {
-                            match.event = res.text && JSON.parse(res.text) || [];
-                            // console.log(match)
-                            callback(null,)
-                        })
-                }
-            ], 10, (err, res) => {
-                console.log();
-                console.log("-----------------------")
-                console.log(res);
-                // console.log(index, ',', match.id)
-                ep.emit('match', match);
+            /*ep.tail('match', (match) => {
+                matches.push(match);
             })*/
 
 
+            /*let queue = async.queue((task, callback) => {
+                request
+                    .post(`http://live.zgzcw.com/ls/EventData.action?id=${task.matchId}`)
+                    .end((err, res) => {
+                        res = res.text && JSON.parse(res.text) || []
+                        // match.event = ;
+                        // console.log(match)
+                        callback(null, res)
+                    })
+    
+            }, 5)
+            queue.drain = () => { console.log('all over') };*/
 
+
+            // queue.saturated = () => { console.log('a group over') }
+            // queue.empty=()=>{console.log('empty')}
+
+            // tr.each((index, item) => {
+            async.mapLimit(tr, 10, (item, callback) => {
+                var match = {
+                    id: $(item).attr('matchid'),
+                    type: $(item).find('.matchType').text(),
+                    round: $(item).find('td[name=ROUND_AND_GROUPING]').text(),
+                    date: $(item).find('.matchDate').text(),
+                    home: $(item).find('.sptl>a').text(),
+                    guest: $(item).find('.sptr>a').text(),
+                    score: $(item).find('td.boldbf').text(),
+                    score_half: $(item).find('.bcbf').text(),
+                    odds: {
+                        european: $(item).find('.oupei span').map((index, item) => { return $(item).text() }).toArray(),
+                        asian: $(item).find('.yapan span').map((index, item) => { return $(item).text() }).toArray(),
+                    }
+                }
+
+                request
+                    .post(`http://live.zgzcw.com/ls/EventData.action?id=${match.id}`)
+                    .end((err, res) => {
+                        res = res.text && JSON.parse(res.text) || []
+                        match.event = res;
+
+                        finishedNum++;
+                        console.log(`${Math.floor(finishedNum / allNum * 100)}%`)
+                        callback(null, match)
+                    })
+
+                /*queue.push({ matchId: match.id }, (err, res) => {
+                    match.event = res;
+                    ep.emit('match', match);
+                })*/
+            }, (err, res) => {
+                // console.log(res)
+                writeToFile(res)
+            })
+
+
+            // ep.emit('list', matches);
         })
-        // console.log(ep, tr.length)
-
-
-        // ep.emit('list', matches);
+}
+function writeToFile(data) {
+    fs.writeFile(`data/match-${zgzcwData.date}.txt`, JSON.stringify(data, null, 4), 'utf8', (err, res) => {
+        err && console.log(err);
+        console.log('writed')
+        zgzcwData.date = moment(zgzcwData.date).subtract(1, 'd').format('YYYY-MM-DD');
+        getMatches(moment(zgzcwData.date).format('YYYYMMDD'));
     })
+}
 
 // ep.all('list', 'detail', (list, detail) => {
 
