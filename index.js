@@ -120,11 +120,12 @@ function getMatches(date) {
         })
 }
 function writeToFile(data) {
-    const isExists = fs.existsSync('data');
+    const storePath = path.join('data', moment(zgzcwData.date).format('YYYYMM'));
+    const isExists = fs.existsSync(storePath);
     if (!isExists) {
-        fs.mkdirSync('data');
+        fs.mkdirSync(storePath);
     }
-    fs.writeFile(`data/match-${zgzcwData.date}.json`, JSON.stringify(data, null, 4), 'utf8', (err, res) => {
+    fs.writeFile(path.join(storePath, `match-${zgzcwData.date}.json`), JSON.stringify(data, null, 4), 'utf8', (err, res) => {
         err && console.log(err);
         console.log('writed')
         zgzcwData.date = moment(zgzcwData.date).subtract(1, 'd').format('YYYY-MM-DD');
@@ -133,7 +134,8 @@ function writeToFile(data) {
 }
 
 function isAlreadyRequest(date) {
-    const isExists = fs.existsSync(`data/match-${date}.json`)
+    const storePath = path.join('data', moment(zgzcwData.date).format('YYYYMM'));
+    const isExists = fs.existsSync(path.join(storePath, `match-${date}.json`));
     if (isExists) {
         return true
     }
