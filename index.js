@@ -16,14 +16,14 @@ const zgzcwData = {
     code: 'all',
     // code: '201',
     ajax: true,
-    date: '2017-02-22',
+    date: '2017-02-24',
 }
 
-getMatches('20170222')
+getMatches('20170224')
 
 function getMatches(date) {
     if (date < '20170201') return;
-    
+
     request
         .post(zgzcwUrl)
         .type('form')
@@ -73,7 +73,7 @@ function getMatches(date) {
             // queue.empty=()=>{console.log('empty')}
 
             // tr.each((index, item) => {
-            async.mapLimit(tr, 10, (item, callback) => {
+            async.mapLimit(tr, 100, (item, callback) => {
                 var match = {
                     id: $(item).attr('matchid'),
                     type: $(item).find('.matchType').text(),
@@ -92,11 +92,11 @@ function getMatches(date) {
                 request
                     .post(`http://live.zgzcw.com/ls/EventData.action?id=${match.id}`)
                     .end((err, res) => {
-                        res = res.text && JSON.parse(res.text) || []
+                        res = res && res.text && JSON.parse(res.text) || []
                         match.event = res;
 
                         finishedNum++;
-                        console.log(`${Math.floor(finishedNum / allNum * 100)}%`)
+                        console.log(`${(finishedNum / allNum * 100).toFixed(2)}%`)
                         callback(null, match)
                     })
 
@@ -114,7 +114,7 @@ function getMatches(date) {
         })
 }
 function writeToFile(data) {
-    fs.writeFile(`data/match-${zgzcwData.date}.txt`, JSON.stringify(data, null, 4), 'utf8', (err, res) => {
+    fs.writeFile(`data/match-${zgzcwData.date}.json`, JSON.stringify(data, null, 4), 'utf8', (err, res) => {
         err && console.log(err);
         console.log('writed')
         zgzcwData.date = moment(zgzcwData.date).subtract(1, 'd').format('YYYY-MM-DD');
