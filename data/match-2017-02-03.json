@@ -4208,71 +4208,7 @@
                 "1.19"
             ]
         },
-        "event": [
-            {
-                "EVENT_TYPE": "1",
-                "PLAYER_NAME_TRADITIONAL": "",
-                "HOST_GUEST_FLAG": "1",
-                "PLAYER_NAME_SIMPLY": "",
-                "ID": "2171214",
-                "OCCUR_TIME": "41",
-                "SOURCE_MATCH_ID": "1317509",
-                "CREATE_DATE": {
-                    "date": 3,
-                    "day": 5,
-                    "hours": 19,
-                    "minutes": 42,
-                    "month": 1,
-                    "nanos": 0,
-                    "seconds": 15,
-                    "time": 1486122135000,
-                    "timezoneOffset": -480,
-                    "year": 117
-                }
-            },
-            {
-                "EVENT_TYPE": "1",
-                "PLAYER_NAME_TRADITIONAL": "",
-                "HOST_GUEST_FLAG": "0",
-                "PLAYER_NAME_SIMPLY": "",
-                "ID": "2171214",
-                "OCCUR_TIME": "60",
-                "SOURCE_MATCH_ID": "1317509",
-                "CREATE_DATE": {
-                    "date": 3,
-                    "day": 5,
-                    "hours": 20,
-                    "minutes": 16,
-                    "month": 1,
-                    "nanos": 0,
-                    "seconds": 15,
-                    "time": 1486124175000,
-                    "timezoneOffset": -480,
-                    "year": 117
-                }
-            },
-            {
-                "EVENT_TYPE": "1",
-                "PLAYER_NAME_TRADITIONAL": "",
-                "HOST_GUEST_FLAG": "1",
-                "PLAYER_NAME_SIMPLY": "",
-                "ID": "2171214",
-                "OCCUR_TIME": "89",
-                "SOURCE_MATCH_ID": "1317509",
-                "CREATE_DATE": {
-                    "date": 3,
-                    "day": 5,
-                    "hours": 20,
-                    "minutes": 47,
-                    "month": 1,
-                    "nanos": 0,
-                    "seconds": 0,
-                    "time": 1486126020000,
-                    "timezoneOffset": -480,
-                    "year": 117
-                }
-            }
-        ]
+        "event": []
     },
     {
         "id": "2171217",

@@ -6659,29 +6659,7 @@
                 "0.8"
             ]
         },
-        "event": [
-            {
-                "EVENT_TYPE": "1",
-                "PLAYER_NAME_TRADITIONAL": "",
-                "HOST_GUEST_FLAG": "1",
-                "PLAYER_NAME_SIMPLY": "",
-                "ID": "2211078",
-                "OCCUR_TIME": "18",
-                "SOURCE_MATCH_ID": "1357851",
-                "CREATE_DATE": {
-                    "date": 16,
-                    "day": 4,
-                    "hours": 4,
-                    "minutes": 42,
-                    "month": 1,
-                    "nanos": 0,
-                    "seconds": 0,
-                    "time": 1487191320000,
-                    "timezoneOffset": -480,
-                    "year": 117
-                }
-            }
-        ]
+        "event": []
     },
     {
         "id": "2211098",
