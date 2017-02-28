@@ -16,13 +16,19 @@ const zgzcwData = {
     code: 'all',
     // code: '201',
     ajax: true,
-    date: '2017-02-24',
+    date: '2017-02-28',
 }
 
-getMatches('20170224')
+getMatches('20170228')
 
 function getMatches(date) {
     if (date < '20170201') return;
+
+    if (isAlreadyRequest(zgzcwData.date)) {
+        zgzcwData.date = moment(zgzcwData.date).subtract(1, 'd').format('YYYY-MM-DD');
+        getMatches(moment(zgzcwData.date).format('YYYYMMDD'));
+        return;
+    }
 
     request
         .post(zgzcwUrl)
@@ -73,7 +79,7 @@ function getMatches(date) {
             // queue.empty=()=>{console.log('empty')}
 
             // tr.each((index, item) => {
-            async.mapLimit(tr, 100, (item, callback) => {
+            async.mapLimit(tr, 30, (item, callback) => {
                 var match = {
                     id: $(item).attr('matchid'),
                     type: $(item).find('.matchType').text(),
@@ -114,12 +120,24 @@ function getMatches(date) {
         })
 }
 function writeToFile(data) {
+    const isExists = fs.existsSync('data');
+    if (!isExists) {
+        fs.mkdirSync('data');
+    }
     fs.writeFile(`data/match-${zgzcwData.date}.json`, JSON.stringify(data, null, 4), 'utf8', (err, res) => {
         err && console.log(err);
         console.log('writed')
         zgzcwData.date = moment(zgzcwData.date).subtract(1, 'd').format('YYYY-MM-DD');
         getMatches(moment(zgzcwData.date).format('YYYYMMDD'));
     })
+}
+
+function isAlreadyRequest(date) {
+    const isExists = fs.existsSync(`data/match-${date}.json`)
+    if (isExists) {
+        return true
+    }
+    return false;
 }
 
 // ep.all('list', 'detail', (list, detail) => {
