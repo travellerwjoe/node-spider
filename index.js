@@ -8,18 +8,22 @@ var url = require('url');
 var path = require('path');
 var fs = require('fs');
 
-/*console.log(moment('2017-02-20').format('YYYYMMDD'))
-console.log(moment('2017-02-20').subtract(1, 'd'));
-return;*/
+
+
+const date = '2017-02-28';
+const momentObj = moment(date);
+const dateYYYYMMDD = momentObj.format('YYYYMMDD');
+const monthMM_DD = momentObj.format('MM-DD');
+
 const zgzcwUrl = 'http://live.zgzcw.com/ls/AllData.action';
 const zgzcwData = {
     code: 'all',
     // code: '201',
     ajax: true,
-    date: '2017-02-28',
+    date: date,
 }
 
-getMatches('20170228')
+getMatches(dateYYYYMMDD)
 
 function getMatches(date) {
     if (date < '20170201') return;
@@ -49,7 +53,9 @@ function getMatches(date) {
             var $ = cheerio.load(res.text);
             var tr = $('tr.matchTr').filter((index, item) => {
                 const status = $(item).find('.matchStatus').text().trim();
-                return status === "完"
+                const date = $(item).find('.matchDate').text();
+                const dateReg=new RegExp(monthMM_DD);
+                return status === "完" && dateReg.test(date);
             });
 
             let matches = [];
@@ -79,7 +85,7 @@ function getMatches(date) {
             // queue.empty=()=>{console.log('empty')}
 
             // tr.each((index, item) => {
-            async.mapLimit(tr, 30, (item, callback) => {
+            async.mapLimit(tr,50, (item, callback) => {
                 var match = {
                     id: $(item).attr('matchid'),
                     type: $(item).find('.matchType').text(),
@@ -98,8 +104,16 @@ function getMatches(date) {
                 request
                     .post(`http://live.zgzcw.com/ls/EventData.action?id=${match.id}`)
                     .end((err, res) => {
-                        res = res && res.text && JSON.parse(res.text) || []
-                        match.event = res;
+                        res = res && res.text && JSON.parse(res.text) || [];
+                        const event= res.map((item,index)=>{
+                            item.PLAYER_NAME=item.PLAYER_NAME_SIMPLY;
+                            item.OCCUR_TIME = parseInt(item.OCCUR_TIME);
+                            delete(item.CREATE_DATE);
+                            delete(item.PLAYER_NAME_TRADITIONAL);
+                            delete(item.PLAYER_NAME_SIMPLY);
+                            return item;
+                        })
+                        match.event = event;
 
                         finishedNum++;
                         console.log(`${(finishedNum / allNum * 100).toFixed(2)}%`)
