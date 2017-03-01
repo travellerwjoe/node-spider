@@ -10,7 +10,7 @@ async.map(files, (item, callback) => {
     const filePath = path.join('data', month, item);
     const cmd = `mongoimport -d football -c match${month} --file ${filePath} --jsonArray`
 
-    child_process.execSync(cmd, (err, stdout, stderr) => {
+    child_process.exec(cmd, (err, stdout, stderr) => {
         const flat = true;
         if (err) {
             console.log(err.message)
@@ -29,3 +29,5 @@ async.map(files, (item, callback) => {
         console.log('Import finished')
     }
 })
+
+// mongoimport -d football -c match201702 --file data\201702\match-2017-02-21.json --jsonArray
