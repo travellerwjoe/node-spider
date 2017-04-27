@@ -10,17 +10,19 @@ var fs = require('fs');
 
 
 
-const date = '2017-02-28';
+const date = new Date();
 const momentObj = moment(date);
 const dateYYYYMMDD = momentObj.format('YYYYMMDD');
-const monthMM_DD = momentObj.format('MM-DD');
+
+let retry = 5;
+
 
 const zgzcwUrl = 'http://live.zgzcw.com/ls/AllData.action';
 const zgzcwData = {
     code: 'all',
     // code: '201',
     ajax: true,
-    date: date,
+    date: moment(date).format('YYYY-MM-DD'),
 }
 
 getMatches(dateYYYYMMDD)
@@ -34,6 +36,8 @@ function getMatches(date) {
         return;
     }
 
+    const monthMM_DD = moment(date).format('MM-DD');
+
     request
         .post(zgzcwUrl)
         .type('form')
@@ -42,6 +46,18 @@ function getMatches(date) {
         .end((err, res) => {
             if (err) {
                 console.log(`请求日期为${zgzcwData.date}的比赛数据出错`);
+                console.log(`错误信息：${err.message}`)
+                retry--
+                if (retry) {
+                    console.log()
+                    console.log(`===== 重新尝试，剩余次数：${retry} =====`)
+                    console.log()
+                    getMatches(date)
+                } else {
+                    console.log()
+                    console.log('!!!!! 已多次尝试失败，请检查出错原因 !!!!!')
+                    console.log()
+                }
                 return;
             }
             console.log('-------------------------------------')
@@ -54,7 +70,7 @@ function getMatches(date) {
             var tr = $('tr.matchTr').filter((index, item) => {
                 const status = $(item).find('.matchStatus').text().trim();
                 const date = $(item).find('.matchDate').text();
-                const dateReg=new RegExp(monthMM_DD);
+                const dateReg = new RegExp(monthMM_DD);
                 return status === "完" && dateReg.test(date);
             });
 
@@ -85,7 +101,9 @@ function getMatches(date) {
             // queue.empty=()=>{console.log('empty')}
 
             // tr.each((index, item) => {
-            async.mapLimit(tr,50, (item, callback) => {
+
+            async.mapLimit(tr, 20, (item, callback) => {
+                // console.log(item)
                 var match = {
                     id: $(item).attr('matchid'),
                     type: $(item).find('.matchType').text(),
@@ -105,12 +123,12 @@ function getMatches(date) {
                     .post(`http://live.zgzcw.com/ls/EventData.action?id=${match.id}`)
                     .end((err, res) => {
                         res = res && res.text && JSON.parse(res.text) || [];
-                        const event= res.map((item,index)=>{
-                            item.PLAYER_NAME=item.PLAYER_NAME_SIMPLY;
+                        const event = res.map((item, index) => {
+                            item.PLAYER_NAME = item.PLAYER_NAME_SIMPLY;
                             item.OCCUR_TIME = parseInt(item.OCCUR_TIME);
-                            delete(item.CREATE_DATE);
-                            delete(item.PLAYER_NAME_TRADITIONAL);
-                            delete(item.PLAYER_NAME_SIMPLY);
+                            delete (item.CREATE_DATE);
+                            delete (item.PLAYER_NAME_TRADITIONAL);
+                            delete (item.PLAYER_NAME_SIMPLY);
                             return item;
                         })
                         match.event = event;
@@ -127,6 +145,7 @@ function getMatches(date) {
             }, (err, res) => {
                 // console.log(res)
                 writeToFile(res)
+                retry = 5
             })
 
 
